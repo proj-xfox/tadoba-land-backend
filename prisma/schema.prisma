@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// 👤 USERS
+//
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique
+  role      UserRole @default(BUYER)
+  createdAt DateTime @default(now())
+
+  isActive Boolean @default(true)
+
+  // Relations
+  properties  Property[]
+  leads       Lead[]
+  leadCredits LeadCredit[]
+}
+
+enum UserRole {
+  OWNER
+  AGENT
+  BUYER
+  ADMIN
+}
+
+//
+// 🏡 PROPERTY LISTINGS
+//
+model Property {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String?
+  price       Float?
+  location    String
+  city        String
+
+  // 🔥 Tadoba USP (Gate-based discovery)
+  gate TadobaGate
+
+  area   Float?
+  type   PropertyType
+  status PropertyStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 👇 Who created listing (owner OR agent)
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  // 👇 Actual owner (optional, internal use)
+  ownerName  String?
+  ownerPhone String?
+
+  // 👇 PUBLIC CONTACT (what buyer sees)
+  contactName  String
+  contactPhone String
+
+  // Media
+  images PropertyImage[]
+
+  // Leads
+  leads Lead[]
+
+  // Controls
+  isFeatured Boolean @default(false)
+
+  // 🚀 INDEXES
+  @@index([city])
+  @@index([gate])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+enum PropertyType {
+  FARM
+  PLOT
+  AGRICULTURE
+  RESIDENTIAL
+  COMMERCIAL
+}
+
+enum PropertyStatus {
+  ACTIVE
+  SOLD
+  INACTIVE
+}
+
+//
+// 🌿 TADOBA GATES (CORE FILTER)
+//
+enum TadobaGate {
+  MOHARLI
+  KOLARA
+  NAVEGAON
+  ZARI
+  JUNONA
+  DEVADA
+  AGARZARI
+  PANGDI
+  KESLAGHAT
+  ALIZANZA
+  MADNAPUR
+}
+
+//
+// 🖼️ PROPERTY IMAGES
+//
+model PropertyImage {
+  id         Int    @id @default(autoincrement())
+  url        String
+  propertyId Int
+
+  property Property @relation(fields: [propertyId], references: [id])
+
+  @@index([propertyId])
+}
+
+//
+// 📞 LEADS
+//
+model Lead {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String
+  message   String?
+  createdAt DateTime @default(now())
+
+  // Property relation
+  propertyId Int
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  // Buyer (optional → guest allowed)
+  buyerId Int?
+  buyer   User? @relation(fields: [buyerId], references: [id])
+
+  // Tracking
+  isViewed Boolean @default(false)
+
+  // 🚀 INDEXES
+  @@index([propertyId])
+  @@index([buyerId])
+  @@index([createdAt])
+}
+
+//
+// 💰 LEAD CREDITS (future monetization)
+//
+model LeadCredit {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  credits   Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
