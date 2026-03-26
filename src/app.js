@@ -2,8 +2,10 @@ import express from "express";
 import cors from "cors";
 
 // Routes
+import authRoutes from "./routes/auth.routes.js";
 import propertyRoutes from "./routes/property.routes.js";
 import leadRoutes from "./routes/lead.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 
 // (Future ready)
 // import authRoutes from "./routes/auth.routes.js";
@@ -43,8 +45,10 @@ app.get("/api/health", (req, res) => {
 // ------------------------------------------
 // PUBLIC ROUTES
 // ------------------------------------------
+app.use("/api/auth", authRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/leads", leadRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // ------------------------------------------
 // PROTECTED ROUTES (future)

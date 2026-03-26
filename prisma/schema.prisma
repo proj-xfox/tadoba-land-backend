@@ -15,6 +15,9 @@ model User {
   name      String
   phone     String   @unique
   role      UserRole @default(BUYER)
+  email     String?  @unique   // ✅ optional (UI support)
+  passwordHash String?          
+
   createdAt DateTime @default(now())
 
   isActive Boolean @default(true)
@@ -39,48 +42,62 @@ model Property {
   id          Int     @id @default(autoincrement())
   title       String
   description String?
-  price       Float?
-  location    String
-  city        String
 
-  // 🔥 Tadoba USP (Gate-based discovery)
+  // 💰 Price (in INR)
+  price Int?
+
+  // 📍 Location
+  address String
+  city    String
+
+  // 🔥 Tadoba USP
   gate TadobaGate
 
-  area   Float?
+  // 📐 Area
+  area     Float?
+  areaUnit AreaUnit?
+
   type   PropertyType
-  status PropertyStatus @default(ACTIVE)
+  status PropertyStatus @default(DRAFT)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // 👇 Who created listing (owner OR agent)
+  // 👤 Who created listing
   userId Int
   user   User @relation(fields: [userId], references: [id])
 
-  // 👇 Actual owner (optional, internal use)
+  // 👇 Owner (internal)
   ownerName  String?
   ownerPhone String?
 
-  // 👇 PUBLIC CONTACT (what buyer sees)
+  // 👇 Public contact
   contactName  String
   contactPhone String
 
-  // Media
+  // 🖼️ Images
   images PropertyImage[]
 
-  // Leads
-  leads Lead[]
-
-  // Controls
+  // ⭐ Controls
   isFeatured Boolean @default(false)
 
-  // 🚀 INDEXES
+  // (optional future)
+  slug String? @unique
+  leads Lead[] @relation("PropertyLeads")
+
+  // 🚀 Indexes
   @@index([city])
   @@index([gate])
   @@index([type])
   @@index([status])
   @@index([createdAt])
   @@index([userId])
+}
+
+enum AreaUnit {
+  ACRE
+  SQFT
+  GUNTHA
 }
 
 enum PropertyType {
@@ -92,6 +109,7 @@ enum PropertyType {
 }
 
 enum PropertyStatus {
+  DRAFT
   ACTIVE
   SOLD
   INACTIVE
@@ -118,11 +136,15 @@ enum TadobaGate {
 // 🖼️ PROPERTY IMAGES
 //
 model PropertyImage {
-  id         Int    @id @default(autoincrement())
-  url        String
-  propertyId Int
+  id           Int      @id @default(autoincrement())
+  propertyId   Int
 
-  property Property @relation(fields: [propertyId], references: [id])
+  optimizedUrl String
+  thumbnailUrl String
+
+  createdAt    DateTime @default(now())
+
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
 }
@@ -139,8 +161,7 @@ model Lead {
 
   // Property relation
   propertyId Int
-  property   Property @relation(fields: [propertyId], references: [id])
-
+  property   Property @relation("PropertyLeads", fields: [propertyId], references: [id])
   // Buyer (optional → guest allowed)
   buyerId Int?
   buyer   User? @relation(fields: [buyerId], references: [id])

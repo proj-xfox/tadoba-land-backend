@@ -1,4 +1,5 @@
-//src/controllers/authController.js
+// src/controllers/authController.js
+
 import { authService } from "../services/authService.js";
 
 export const signup = async (req, res, next) => {
